@@ -1,4 +1,4 @@
-package com.mhc.lock.config;
+package com.jjm.lock.config;
 
 
 import lombok.Data;

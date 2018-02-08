@@ -1,4 +1,4 @@
-package com.mhc.lock.common;
+package com.jjm.lock.common;
 
 import lombok.Data;
 

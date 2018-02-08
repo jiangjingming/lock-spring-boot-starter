@@ -1,4 +1,4 @@
-package com.mhc.lock.annotion;
+package com.jjm.lock.annotion;
 
 import java.lang.annotation.*;
 

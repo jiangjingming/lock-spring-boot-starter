@@ -1,6 +1,6 @@
-package com.mhc.lock.service;
+package com.jjm.lock.service;
 
-import com.mhc.lock.annotion.LockRedis;
+import com.jjm.lock.annotion.LockRedis;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -30,7 +30,7 @@ public class LockRedisService {
     @Autowired
     private JedisPool jedisPool;
 
-    @Pointcut("@annotation(com.mhc.lock.annotion.LockRedis)")
+    @Pointcut("@annotation(com.jjm.lock.annotion.LockRedis)")
     public void lockRedis() {
 
     }

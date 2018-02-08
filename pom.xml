@@ -3,7 +3,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.mhc</groupId>
+	<groupId>com.jjm</groupId>
 	<artifactId>lock-spring-boot-starter</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 
@@ -63,23 +63,6 @@
 		</plugins>
 	</build>
 
-	<distributionManagement>
-		<repository>
-			<id>releases</id>
-			<name>releases</name>
-			<url>http://yijiqingchen.com:9000/nexus/content/repositories/releases</url>
-		</repository>
-		<!--<repository>-->
-		<!--<id>thirdparty</id>-->
-		<!--<name>thirdparty</name>-->
-		<!--<url>http://yijiqingchen.com:9000/nexus/content/repositories/thirdparty</url>-->
-		<!--</repository>-->
-		<snapshotRepository>
-			<id>snapshots</id>
-			<name>snapshots</name>
-			<url>http://yijiqingchen.com:9000/nexus/content/repositories/snapshots</url>
-		</snapshotRepository>
-	</distributionManagement>
 
 
 </project>

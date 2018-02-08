@@ -1,7 +1,7 @@
-package com.mhc.lock.util;
+package com.jjm.lock.util;
 
-import com.mhc.lock.annotion.ValidMessage;
-import com.mhc.lock.common.Result;
+import com.jjm.lock.annotion.ValidMessage;
+import com.jjm.lock.common.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
