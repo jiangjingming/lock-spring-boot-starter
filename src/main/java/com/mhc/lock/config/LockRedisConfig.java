@@ -1,4 +1,4 @@
-package com.jjm.lock.config;
+package com.mhc.lock.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
