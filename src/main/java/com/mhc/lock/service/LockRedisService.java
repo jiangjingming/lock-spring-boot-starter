@@ -15,6 +15,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.Objects;
 
 /**
@@ -26,6 +27,10 @@ import java.util.Objects;
 @Component
 @ConditionalOnBean(JedisPool.class)
 public class LockRedisService {
+
+    private static final String LOCK_SUCCESS = "OK";
+    private static final String SET_IF_NOT_EXIST = "NX";
+    private static final String SET_WITH_EXPIRE_TIME = "PX";
 
     @Autowired
     private JedisPool jedisPool;
@@ -43,50 +48,64 @@ public class LockRedisService {
         LockRedis lockRedis = method.getAnnotation(LockRedis.class);
         String redisKey = joinPoint.getTarget().getClass().getName().concat(".").concat(joinPoint.getSignature().getName());
         String redisValue = String.valueOf(System.currentTimeMillis());
-        Long cxt = jedis.setnx(redisKey, redisValue);
-        if (1L == cxt) {
+        boolean isGetLockFlag = tryGetDistributedLock(jedis,redisKey,redisValue,lockRedis.expireTime());
+        if (isGetLockFlag) {
             try {
                 joinPoint.proceed();
             } catch (Throwable throwable) {
                 log.error("出错异常，throwable = [{}]", throwable);
             } finally {
-                manageLockRedis(lockRedis, jedis, redisKey, redisValue);
-            }
-        }
-        if (0L == cxt) {
-            String lockRedisTime = jedis.get(redisKey);
-            if (StringUtils.isEmpty(lockRedisTime)) {
-                managePolling(lockRedis, jedis, joinPoint);
+                releaseDistributedLock(jedis,redisKey,redisValue,lockRedis);
                 return;
             }
-            Long lockTime = Long.valueOf(lockRedisTime);
-            Long differSecond = (System.currentTimeMillis() - lockTime) / 1000;
-            Long expireSecond = lockRedis.expireTime();
-            if (differSecond < expireSecond) {
-                managePolling(lockRedis, jedis, joinPoint);
-                return;
+        }
+        if (!isGetLockFlag) {
+            managePolling(lockRedis, jedis, joinPoint);
+        }
+    }
+
+    /**
+     * 尝试获取分布式锁
+     * @param jedis Redis客户端
+     * @param lockKey 锁
+     * @param redisValue 请求标识
+     * @param expireTime 超期时间
+     * @return 是否获取成功
+     */
+    public static boolean tryGetDistributedLock(Jedis jedis, String lockKey, String redisValue, int expireTime) {
+
+        String result = jedis.set(lockKey, redisValue, SET_IF_NOT_EXIST, SET_WITH_EXPIRE_TIME, expireTime);
+
+        if (LOCK_SUCCESS.equals(result)) {
+            return true;
+        }
+        return false;
+
+    }
+
+    /**
+     * 释放分布式锁
+     * @param jedis Redis客户端
+     * @param redisKey 锁
+     * @param redisValue 请求标识
+     */
+    public static void releaseDistributedLock(Jedis jedis, String redisKey, String redisValue, LockRedis lockRedis) {
+        boolean flag = lockRedis.isDelayReleaseLock();
+        try {
+            if (!flag) {
+                String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+                jedis.eval(script, Collections.singletonList(redisKey), Collections.singletonList(redisValue));
+            } else {
+                jedis.expire(redisKey, lockRedis.leaseTime());
             }
-            if (differSecond >= expireSecond) {
-                String oldTime = jedis.get(redisKey);
-                String mayBeOldTime = jedis.getSet(redisKey,String.valueOf(System.currentTimeMillis()));
-                if (Objects.equals(oldTime, mayBeOldTime)) {
-                    jedis.del(redisKey);
-                    String newRedisValue = String.valueOf(System.currentTimeMillis());
-                    cxt = jedis.setnx(redisKey,newRedisValue);
-                    if (1 != cxt) {
-                        log.error("正常不会出现的情况");
-                        return;
-                    }
-                    try {
-                        joinPoint.proceed();
-                    } catch (Throwable throwable) {
-                        log.error("出错异常，throwable = [{}]", throwable);
-                    } finally {
-                        manageLockRedis(lockRedis, jedis, redisKey, newRedisValue);
-                    }
-                }
+        } catch (Exception e) {
+            log.error("释放分布式锁releaseDistributedLock出现异常， e = [{}]", e);
+        } finally {
+            if (Objects.nonNull(jedis)) {
+                jedis.close();
             }
         }
+
     }
 
     /**
@@ -104,7 +123,7 @@ public class LockRedisService {
         } else {
             int pollingIntervalTime = lockRedis.pollingIntervalTime();
             try {
-                Thread.sleep(1000L * pollingIntervalTime);
+                Thread.sleep(pollingIntervalTime);
                 log.warn("Thread.sleep(),pollingIntervalTime==[{}]", pollingIntervalTime);
                 isGetLockRedis(joinPoint);
             } catch (InterruptedException e) {
@@ -115,27 +134,5 @@ public class LockRedisService {
         }
     }
 
-
-    /**
-     * 释放锁资源及设置过期时间
-     * @param lockRedis
-     * @param jedis
-     * @param redisKey
-     */
-    private void manageLockRedis(LockRedis lockRedis, Jedis jedis, String redisKey,String redisValue) {
-        boolean flag = lockRedis.isDelayReleaseLock();
-        String value = jedis.get(redisKey);
-        if (!flag) {
-            //数据值相同进行删除
-            if (Objects.equals(redisValue,value)) {
-                jedis.del(redisKey);
-            }
-        } else {
-            if (Objects.equals(redisValue,value)) {
-                jedis.expire(redisKey, lockRedis.leaseTime());
-            }
-        }
-        jedis.close();
-    }
 }
 

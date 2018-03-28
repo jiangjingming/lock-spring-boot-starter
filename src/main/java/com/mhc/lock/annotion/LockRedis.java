@@ -14,7 +14,7 @@ public @interface LockRedis {
      * 锁的过期时间时间，防止死锁(秒)
      * @return
      */
-    long expireTime() default 300;
+    int expireTime() default 300;
 
     /**
      *上锁以后xxx秒自动解锁
@@ -35,10 +35,10 @@ public @interface LockRedis {
     boolean isPolling() default false;
 
     /**
-     * 轮询请求间隔时间(秒）
+     * 轮询请求间隔时间(毫秒）
      * @return
      */
-    int pollingIntervalTime() default 1;
+    int pollingIntervalTime() default 500;
 
     /**
      * 注释
