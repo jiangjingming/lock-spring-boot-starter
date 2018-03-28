@@ -2,8 +2,6 @@ package com.mhc.lock.util;
 
 import com.mhc.lock.service.LockRedisService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
@@ -25,10 +23,17 @@ public class LockRedisUtil {
      * 获取分布式锁
      * @param redisKey
      * @param redisValue
-     * @param expireTime
+     * @param expireTime(毫秒）
      * @return 是否获取锁
      */
     public static boolean tryGetDistributedLock(String redisKey, String redisValue, Integer expireTime) {
+        if (Objects.isNull(redisKey) || Objects.isNull(redisValue) || Objects.isNull(expireTime)) {
+            throw new RuntimeException("参数不能为空");
+        }
+        //过期时间(毫秒)不能小于0
+        if (expireTime > 0) {
+            throw new RuntimeException("过期时间(毫秒)不能小于0");
+        }
         Jedis jedis = null;
         try {
             jedis = jedisPool.getResource();
@@ -50,6 +55,9 @@ public class LockRedisUtil {
      * @return 是否归还锁
      */
     public static boolean releaseDistributedLock(String redisKey, String redisValue) {
+        if (Objects.isNull(redisKey) || Objects.isNull(redisValue)) {
+            throw new RuntimeException("参数不能为空");
+        }
         Jedis jedis = null;
         try {
             jedis = jedisPool.getResource();
