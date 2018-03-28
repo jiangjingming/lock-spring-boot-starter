@@ -1,3 +1,4 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 com.mhc.lock.config.LockRedisConfig,\
+com.mhc.lock.util.SpringUtil,\
 com.mhc.lock.service.LockRedisService

@@ -10,13 +10,13 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * aop切面
@@ -47,8 +47,8 @@ public class LockRedisService {
         Method method = methodSignature.getMethod();
         LockRedis lockRedis = method.getAnnotation(LockRedis.class);
         String redisKey = joinPoint.getTarget().getClass().getName().concat(".").concat(joinPoint.getSignature().getName());
-        String redisValue = String.valueOf(System.currentTimeMillis());
-        boolean isGetLockFlag = tryGetDistributedLock(jedis,redisKey,redisValue,lockRedis.expireTime());
+        String redisValue = UUID.randomUUID().toString();
+        boolean isGetLockFlag = tryGetDistributedLock(jedis, redisKey, redisValue, lockRedis.expireTime());
         if (isGetLockFlag) {
             try {
                 joinPoint.proceed();
@@ -114,23 +114,16 @@ public class LockRedisService {
      * @param jedis
      * @param joinPoint
      */
-    private void managePolling(LockRedis lockRedis, Jedis jedis, ProceedingJoinPoint joinPoint) {
-        //是否轮询
-        boolean flag = lockRedis.isPolling();
-        if (!flag) {
+    private void managePolling(LockRedis lockRedis, Jedis jedis, ProceedingJoinPoint joinPoint) throws InterruptedException {
+        if (Objects.nonNull(jedis)) {
             jedis.close();
-            return;
-        } else {
+        }
+        //是否轮询
+        if (lockRedis.isPolling()) {
             int pollingIntervalTime = lockRedis.pollingIntervalTime();
-            try {
-                Thread.sleep(pollingIntervalTime);
-                log.warn("Thread.sleep(),pollingIntervalTime==[{}]", pollingIntervalTime);
-                isGetLockRedis(joinPoint);
-            } catch (InterruptedException e) {
-                log.error("处理是否需要轮询出现异常e = [{}]", e);
-            } finally {
-                jedis.close();
-            }
+            Thread.sleep(pollingIntervalTime);
+            log.warn("Thread.sleep(),pollingIntervalTime==[{}]", pollingIntervalTime);
+            isGetLockRedis(joinPoint);
         }
     }
 

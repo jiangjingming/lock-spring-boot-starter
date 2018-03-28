@@ -11,7 +11,7 @@ import java.lang.annotation.*;
 @Documented
 public @interface LockRedis {
     /**
-     * 锁的过期时间时间，防止死锁(秒)
+     * 锁的过期时间时间，防止死锁(毫秒)
      * @return
      */
     int expireTime() default 300;
