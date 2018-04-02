@@ -5,7 +5,7 @@
 
 	<groupId>com.mhc</groupId>
 	<artifactId>lock-spring-boot-starter</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 
 	<name>lock-spring-boot-starter</name>
 	<description>分布式锁</description>
