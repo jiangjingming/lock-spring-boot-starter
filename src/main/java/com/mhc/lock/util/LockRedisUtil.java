@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.Objects;
 
 /**
- * 分布锁工具
+ * 分布锁工具(代码中调用）
  * Created by jiangjingming on 2018/3/28.
  */
 @Slf4j
